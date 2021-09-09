@@ -13,7 +13,7 @@ app.use(express.static('public'));
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 
 function randomId() {
-  let randomStr = '812314dqiy38429738dkjdal39247032828kj';
+  let randomStr = '81231431728392719743';
   let subStr = '';
 
   for (let i = 0; i < 7; i++) {
@@ -23,6 +23,7 @@ function randomId() {
   return subStr * 1;
 }
 
+console.log(randomId());
 ///////////////models///////////////
 const UserSchema = new mongoose.Schema({
   _id: {

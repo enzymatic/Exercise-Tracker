@@ -13,10 +13,10 @@ app.use(express.static('public'));
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 
 function randomId() {
-  let randomStr = '81231431728392719743';
+  let randomStr = '8123143172839271934238793743';
   let subStr = '';
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 13; i++) {
     subStr += randomStr[Math.floor(Math.random() * randomStr.length)];
   }
 

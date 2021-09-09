@@ -23,7 +23,6 @@ function randomId() {
   return subStr * 1;
 }
 
-console.log(randomId());
 ///////////////models///////////////
 const UserSchema = new mongoose.Schema({
   _id: {
@@ -81,7 +80,11 @@ app.post('/api/users', async (req, res) => {
     if (inDatabase) {
       throw new Error('user exists with username');
     } else {
-      inDatabase = await UserModel.create({ username });
+      inDatabase = new UserModel({ username });
+      await inDatabase.save();
+
+      console.log(inDatabase);
+
       res.json({
         username: inDatabase.username,
         _id: inDatabase._id,
@@ -102,12 +105,14 @@ app.post('/api/users/:userId?/exercises', async (req, res) => {
     if (!inDatabase) {
       throw new Error('wrong id');
     } else {
-      inDatabase = await ExerciseModel.create({
+      inDatabase = new ExerciseModel({
         description,
         duration,
         date,
         userId,
       });
+
+      await inDatabase.save();
 
       res.json({
         username: inDatabase.username,

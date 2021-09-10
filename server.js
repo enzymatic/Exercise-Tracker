@@ -81,8 +81,8 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.post('/api/users/:_id?/exercises', async (req, res) => {
-  let { _id, description, duration, date } = req.body;
+app.post('/api/users/:id?/exercises', async (req, res) => {
+  let { id, description, duration, date } = req.body;
   let inDatabase;
 
   console.log(req.body);
@@ -93,7 +93,7 @@ app.post('/api/users/:_id?/exercises', async (req, res) => {
       throw new Error('wrong id');
     } else {
       inDatabase = new ExerciseModel({
-        _id,
+        _id: id,
         description,
         duration,
         date,
@@ -102,7 +102,7 @@ app.post('/api/users/:_id?/exercises', async (req, res) => {
       await inDatabase.save();
 
       res.json({
-        _id,
+        _id: id,
         username: user.username,
         description: inDatabase.description,
         duration: inDatabase.duration,

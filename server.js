@@ -13,11 +13,7 @@ app.use(express.static('public'));
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 
 ///////////////models///////////////
-// const UserSchema = new mongoose.Schema({
-//   username: {
-//     type: String,
-//   },
-// });
+
 const ExerciseSchema = new mongoose.Schema({
   description: {
     type: String,
@@ -51,6 +47,33 @@ app.get('/api/users', async (req, res) => {
     let inDatabase = await UserModel.find();
 
     res.json([...inDatabase]);
+  } catch (error) {
+    res.json({ error: 'something went wrong' });
+  }
+});
+
+app.post('/api/users', async (req, res) => {
+  const { username } = req.body;
+  let inDatabase;
+
+  console.log('am in the post');
+
+  try {
+    inDatabase = await UserModel.findOne({ username });
+    if (inDatabase) {
+      throw new Error('user exists with username');
+    } else {
+      inDatabase = new UserModel({ username });
+      await inDatabase.save();
+
+      console.log('inDatabase');
+      console.log(inDatabase);
+
+      res.send({
+        username: inDatabase.username,
+        _id: inDatabase._id,
+      });
+    }
   } catch (error) {
     res.json({ error: 'something went wrong' });
   }
@@ -100,33 +123,6 @@ app.get('/api/users/:_id/logs', async (req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
-  const { username } = req.body;
-  let inDatabase;
-
-  console.log('am in the post');
-
-  try {
-    inDatabase = await UserModel.findOne({ username });
-    if (inDatabase) {
-      throw new Error('user exists with username');
-    } else {
-      inDatabase = new UserModel({ username });
-      await inDatabase.save();
-
-      console.log('inDatabase');
-      console.log(inDatabase);
-
-      res.send({
-        username: inDatabase.username,
-        _id: inDatabase._id,
-      });
-    }
-  } catch (error) {
-    res.json({ error: 'something went wrong' });
-  }
-});
-
 app.post('/api/users/:_id/exercises', async (req, res) => {
   const { _id } = req.params;
   const { duration, description } = req.body;
@@ -158,46 +154,11 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
         username,
         ...log,
       });
-      // res.json({
-      //   _id,
-      //   username,
-      //   date: date.toDateString(),
-      //   duration: parseInt(duration),
-      //   description,
-      // });
     }
   } catch (error) {
     res.json({ error: error.message });
   }
 });
-// app.post('/api/users/:_id/exercises', async (req, res) => {
-//   const _id = req.params._id;
-//   const { duration, description } = req.body;
-//   let date = req.body.date ? new Date(req.body.date) : new Date();
-
-//   try {
-//     const user = await UserModel.findById(_id);
-//     if (!user) {
-//       res.send('Wrong id');
-//     } else {
-//       const username = user.username;
-//       await ExerciseModel.create({
-//         date: date.toDateString(),
-//         duration,
-//         description,
-//       });
-//       res.json({
-//         _id,
-//         username,
-//         date: date.toDateString(),
-//         duration: parseInt(duration),
-//         description,
-//       });
-//     }
-//   } catch (error) {
-//     res.json({ error: error.message });
-//   }
-// });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port);

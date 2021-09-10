@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const moment = require('moment');
 const cors = require('cors');
 require('dotenv').config();
 
@@ -35,15 +36,10 @@ const ExerciseSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: new Date().toLocaleTimeString('en-us', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }),
+    // default: ,
   },
 });
-
+// 'December 25, 1995 13:30:00';
 const ExerciseModel = mongoose.model('Exercise', ExerciseSchema);
 
 app.get('/', (req, res) => {
@@ -110,7 +106,8 @@ app.post('/api/users/:_id?/exercises', async (req, res) => {
         username: user.username,
         description: inDatabase.description,
         duration: inDatabase.duration,
-        date: inDatabase.date,
+        date: new Date().toDateString(),
+        // date: moment().format('ddd MMM DD YYYY'),
       });
     }
   } catch (error) {

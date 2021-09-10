@@ -116,38 +116,68 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:id/logs', (req, res) => {
-  let { userId, from, to, limit } = req.query;
-  from = moment(from, 'YYYY-MM-DD').isValid() ? moment(from, 'YYYY-MM-DD') : 0;
-  to = moment(to, 'YYYY-MM-DD').isValid()
-    ? moment(to, 'YYYY-MM-DD')
-    : moment().add(1000000000000);
-  User.findById(userId)
-    .then((user) => {
-      if (!user) throw new Error('Unknown user with _id');
-      Exercise.find({ userId })
-        .where('date')
-        .gte(from)
-        .lte(to)
+app.get('/api/users/:_id/logs', (req, res) => {
+  const userId = req.params._id,
+    { limit } = req.query;
+  var from = req.query.from
+    ? new Date(req.query.from).getTime()
+    : new Date('1111-11-11').getTime();
+  var to = req.query.to
+    ? new Date(req.query.to).getTime()
+    : new Date().getTime();
+
+  UserModel.findById(userId, (err, data) => {
+    if (err) console.error(err);
+
+    if (!data) {
+      res.send('Unknown userId');
+    } else {
+      const username = data.username;
+      console.log('*************************************');
+      console.log('USER LOG SEARCHED: ' + username);
+      console.log('from: ' + from, 'to: ' + to);
+
+      ExerciseModel.find(
+        { userId: userId } /*, {"date": {$gte: from, $lte: to}}*/
+      )
+        .select(['description', 'date', 'duration'])
         .limit(+limit)
-        .exec()
-        .then((log) =>
-          res.status(200).send({
-            _id: userId,
-            username: user.username,
-            count: log.length,
-            log: log.map((o) => ({
-              description: o.description,
-              duration: o.duration,
-              date: moment(o).format('ddd MMMM DD YYYY'),
-            })),
-          })
-        );
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).send(err.message);
-    });
+        .sort({ date: -1 })
+        .exec((err, data) => {
+          if (err) console.error(err);
+          let count = 0;
+          let customData = data
+            .filter((element) => {
+              let newEle = new Date(element.date).getTime();
+              if (newEle >= from && newEle <= to) count++;
+              return newEle >= from && newEle <= to;
+            })
+            .map((element) => {
+              let newDate = new Date(element.date).toDateString();
+              return {
+                description: element.description,
+                duration: element.duration,
+                date: newDate,
+              };
+            });
+          if (!data) {
+            res.json({
+              _id: userId,
+              username: username,
+              count: 0,
+              log: [],
+            });
+          } else {
+            res.json({
+              _id: userId,
+              username: username,
+              count: count,
+              log: customData,
+            });
+          }
+        });
+    }
+  });
 });
 
 // app.get('/api/users/:id/logs', async (req, res) => {

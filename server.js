@@ -115,71 +115,112 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:_id/logs', (req, res) => {
-  let _id = req.params._id;
-  let { limit } = req.query;
-  let from = req.query.from
-    ? new Date(req.query.from).getTime()
-    : new Date('1111-11-11').getTime();
-  let to = req.query.to
-    ? new Date(req.query.to).getTime()
-    : new Date().getTime();
-
-  UserModel.findById(_id, (err, data) => {
-    if (err) console.error(err);
-
-    if (!data) {
-      res.send('Unknown userId');
-    } else {
-      const username = data.username;
-      console.log('*************************************');
-      console.log('USER LOG SEARCHED: ' + username);
-      console.log('from: ' + from, 'to: ' + to);
-
-      ExerciseModel.find({ _id })
-        .select(['description', 'date', 'duration'])
-        .where('date')
-        .gte(from)
-        .lte(to)
-        .limit(limit)
-        .exec((err, data) => {
-          if (err) console.error(err);
-          let count = 0;
-
-          console.log('data', data);
-          let customData = data
-            .filter((element) => {
-              let newEle = new Date(element.date).getTime();
-              if (newEle >= from && newEle <= to) count++;
-              return newEle >= from && newEle <= to;
-            })
-            .map((element) => {
-              let newDate = new Date(element.date).toDateString();
-              return {
-                description: element.description,
-                duration: element.duration,
-                date: newDate,
-              };
-            });
-          if (!data) {
-            res.json({
-              _id,
-              username: username,
-              count: 0,
-              log: [],
-            });
-          } else {
-            res.json({
-              _id,
-              username: username,
-              count: count,
-              log: customData,
-            });
+app.get('/api/users/:_id/logs', (req, res, next) => {
+  //get user id
+  console.log('here?');
+  let id = req.params._id;
+  //check if id is not null
+  if (id) {
+    UserModel.findById(id, function (err, doc) {
+      if (err) {
+        return next(err);
+      } else {
+        console.log(doc);
+        //find all exercises which have the same userName
+        ExerciseModel.find({ _id: id }, function (error, data) {
+          //data retrieves array of logs
+          if (error) {
+            return next(error);
           }
+          //we need to have both FROM and TO
+          if (req.query.from && req.query.to) {
+            data = data.filter(
+              (d) =>
+                Date.parse(d.date) >= Date.parse(req.query.from) &&
+                Date.parse(d.date) <= Date.parse(req.query.to)
+            );
+          }
+          //check if index is smaller then LIMIT
+          if (req.query.limit) {
+            data = data.filter((d, i) => i < req.query.limit);
+          }
+          res.json({
+            _id: doc._id,
+            userName: doc.userName,
+            count: data.length,
+            log: data,
+          });
         });
-    }
-  });
+      }
+    });
+  }
 });
+
+// app.get('/api/users/:_id/logs', (req, res) => {
+//   let _id = req.params._id;
+//   let { limit } = req.query;
+//   let from = req.query.from
+//     ? new Date(req.query.from).getTime()
+//     : new Date('1111-11-11').getTime();
+//   let to = req.query.to
+//     ? new Date(req.query.to).getTime()
+//     : new Date().getTime();
+
+//   UserModel.findById(_id, (err, data) => {
+//     if (err) console.error(err);
+
+//     if (!data) {
+//       res.send('Unknown userId');
+//     } else {
+//       const username = data.username;
+//       console.log('*************************************');
+//       console.log('USER LOG SEARCHED: ' + username);
+//       console.log('from: ' + from, 'to: ' + to);
+
+//       ExerciseModel.find({ _id })
+//         .select(['description', 'date', 'duration'])
+//         .where('date')
+//         .gte(from)
+//         .lte(to)
+//         .limit(limit)
+//         .exec((err, data) => {
+//           if (err) console.error(err);
+//           let count = 0;
+
+//           console.log('data', data);
+//           let customData = data
+//             .filter((element) => {
+//               let newEle = new Date(element.date).getTime();
+//               if (newEle >= from && newEle <= to) count++;
+//               return newEle >= from && newEle <= to;
+//             })
+//             .map((element) => {
+//               let newDate = new Date(element.date).toDateString();
+//               return {
+//                 description: element.description,
+//                 duration: element.duration,
+//                 date: newDate,
+//               };
+//             });
+//           if (!data) {
+//             res.json({
+//               _id,
+//               username: username,
+//               count: 0,
+//               log: [],
+//             });
+//           } else {
+//             res.json({
+//               _id,
+//               username: username,
+//               count: count,
+//               log: customData,
+//             });
+//           }
+//         });
+//     }
+//   });
+// });
 
 // app.get('/api/users/:_id/logs', async (req, res) => {
 //   let { limit = -1 } = req.query;

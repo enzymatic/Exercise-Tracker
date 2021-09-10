@@ -86,9 +86,9 @@ app.post('/api/users/:_id?/exercises', async (req, res) => {
 
   console.log(req.body);
   try {
-    inDatabase = await UserModel.findById(_id);
+    let user = await UserModel.findById(_id);
 
-    if (!inDatabase) {
+    if (!user) {
       throw new Error('wrong id');
     } else {
       inDatabase = new ExerciseModel({
@@ -103,6 +103,7 @@ app.post('/api/users/:_id?/exercises', async (req, res) => {
       console.log('inDatabase');
       console.log(inDatabase);
       res.json({
+        username: user.username,
         description: inDatabase.description,
         duration: inDatabase.duration,
         _id: inDatabase._id,

@@ -81,7 +81,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-  app.post('/api/users/:id?/exercises', async (req, res) => {
+app.post('/api/users/:id?/exercises', async (req, res) => {
   let { _id, description, duration, date } = req.body;
   let inDatabase;
 
@@ -102,11 +102,15 @@ app.post('/api/users', async (req, res) => {
       await inDatabase.save();
 
       res.json({
-        _id,
         username: user.username,
-        description: inDatabase.description,
-        duration: inDatabase.duration,
-        date: new Date().toDateString(),
+        description,
+        duration,
+        _id: user._id,
+        date: moment().format('ddd MMMM DD YYYY'),
+        // ...user,
+        // description: inDatabase.description,
+        // duration: inDatabase.duration,
+        // date: new Date().toDateString(),
       });
     }
   } catch (error) {

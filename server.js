@@ -99,12 +99,13 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (!user) {
       throw new Error('wrong id, try again');
     } else {
-      let exercises = await ExerciseModel.find({ _id })
-        .where('date')
-        // .gte(from)
-        // .lte(to)
-        .limit(limit);
+      let exercises = await ExerciseModel.find({ _id }).select([
+        'description',
+        'duration',
+        'date',
+      ]);
 
+      console.log(exercises);
       if (!exercises) {
         res.json({
           username: user.username,
@@ -119,11 +120,11 @@ app.get('/api/users/:_id/logs', async (req, res) => {
           _id: user._id,
           log: [
             ...exercises
-              .filter((element) => {
-                let newEle = new Date(element.date).getTime();
-                if (newEle >= from && newEle <= to);
+              .filter((exercise) => {
+                let newEle = new Date(exercise.date).getTime();
                 return newEle >= from && newEle <= to;
               })
+              .slice(0, limit)
               .map(({ description, duration, date: oldDate }) => {
                 let date = new Date(oldDate).toDateString();
                 return {

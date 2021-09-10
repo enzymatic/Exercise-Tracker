@@ -13,10 +13,33 @@ app.use(express.static('public'));
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 
 ///////////////models///////////////
+// const UserSchema = new mongoose.Schema({
+//   username: {
+//     type: String,
+//   },
+// });
+
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
+    required: true,
   },
+  exercises: [
+    {
+      description: {
+        type: String,
+        required: true,
+      },
+      duration: {
+        type: Number,
+        required: true,
+      },
+      date: {
+        type: String,
+        required: false,
+      },
+    },
+  ],
 });
 
 const UserModel = mongoose.model('User', UserSchema);
@@ -116,45 +139,23 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', (req, res) => {
-  const userid = req.params._id;
-
-  const findAllExercisesByUser = (userId, done) => {
-    UserModel.findById(userId, (err, user) => {
-      if (err) return done(err);
-      if (!user) return done(null, { error: 'Invalid userid' });
-      ExerciseModel.find({ userid: userId }, (err, exercises) => {
-        if (err) return done(err);
-        const res = {
-          _id: user._id,
-          username: user.username,
-          log: exercises,
-          count: exercises.length,
-        };
-        done(null, res);
+  let { from, to, limit } = req.query;
+  UserModel.findOne(
+    { _id: req.params._id },
+    { username: 1, exercises: 1, _id: 0 }
+  )
+    .where('date')
+    .gte(from)
+    .lte(to)
+    .exec((err, userLog) => {
+      if (err) return console.log(err);
+      res.json({
+        username: userLog.username,
+        log: userLog.exercises.slice(0, limit),
+        _id: userLog._id,
+        count: userLog.exercises.length,
       });
     });
-  };
-
-  findAllExercisesByUser(userid, (err, data) => {
-    if (err) {
-      return res.json({ err });
-    } else {
-      const [from, to, limit] = [req.query.from, req.query.to, req.query.limit];
-      if (from) {
-        data.log = data.log.filter((el) => new Date(el.date) >= new Date(from));
-        data.count = data.log.length;
-      }
-      if (to) {
-        data.log = data.log.filter((el) => new Date(el.date) <= new Date(to));
-        data.count = data.log.length;
-      }
-      if (limit) {
-        data.log = data.log.slice(0, limit);
-        data.count = data.log.length;
-      }
-      return res.json(data);
-    }
-  });
 });
 
 // app.get('/api/users/:_id/logs', (req, res) => {

@@ -82,8 +82,10 @@ app.post('/api/users', async (req, res) => {
 });
 
 app.post('/api/users/:id/exercises', async (req, res) => {
-  let { _id, description, duration, date } = req.body;
+  let { _id, description, duration } = req.body;
+
   let inDatabase;
+  let date = req.body.date ? new Date(req.body.date) : new Date();
 
   console.log(req.body);
   try {
@@ -101,21 +103,13 @@ app.post('/api/users/:id/exercises', async (req, res) => {
 
       await inDatabase.save();
 
-      res.json(
-        Object.assign(user, {
-          date: new Date().toDateString(),
-          duration: inDatabase.duration,
-          description,
-        })
-      );
-
-      // res.json({
-      //   _id: user._id,
-      //   username: user.username,
-      //   date: new Date().toDateString(),
-      //   duration: inDatabase.duration,
-      //   description,
-      // });
+      res.json({
+        _id,
+        username: user.username,
+        date: date.toDateString(),
+        duration: inDatabase.duration,
+        description,
+      });
     }
   } catch (error) {
     res.json({ error: error.message });

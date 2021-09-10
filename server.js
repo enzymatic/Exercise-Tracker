@@ -12,6 +12,39 @@ app.use(express.static('public'));
 
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 
+const UserSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    unique: true,
+    required: true,
+  },
+});
+
+const UserModel = mongoose.model('User', UserSchema);
+
+const ExerciseSchema = new mongoose.Schema({
+  description: {
+    type: String,
+    required: true,
+    maxlength: [25, 'Description too long, not greater than 25'],
+  },
+  duration: {
+    type: Number,
+    required: true,
+    min: [1, 'Duration too short, at least 1 minute'],
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+  _id: {
+    type: String,
+    required: true,
+  },
+});
+
+const ExerciseModel = mongoose.model('Exercise', ExerciseSchema);
+
 ///////////////models///////////////
 // const UserSchema = new mongoose.Schema({
 //   username: {
@@ -152,206 +185,84 @@ mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 //   console.log('Your app is listening on port ' + listener.address().port);
 // });
 
-const { Schema } = mongoose;
-const userSchema = new Schema({
-  username: {
-    type: String,
-    required: true,
-  },
-  log: [
-    {
-      description: {
-        type: String,
-      },
-      duration: {
-        type: Number,
-      },
-      date: {
-        type: Date,
-      },
-    },
-  ],
-});
-// define the model, on which all documents will be based
-const User = mongoose.model('User', userSchema);
-
-// EXPRESS && ROUTING
-// in the root path render the HTML file as found in the views folder
-app.get('/', (req, res) => {
-  res.sendFile(`${__dirname}/views/index.html`);
+app.post('/api/users', (req, res, next) => {
+  const { username } = req.body;
+  UserModel.findOne({ username })
+    .then((user) => {
+      if (user) throw new Error('username already taken');
+      return UserModel.create({ username });
+    })
+    .then((user) =>
+      res.status(200).send({
+        username: user.username,
+        _id: user._id,
+      })
+    )
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send(err.message);
+    });
 });
 
-// in the path selected to register a user, retrieve the value of the username
-// register the user if a user is not registered with the same name
-app.post('/api/users', (req, res) => {
-  const { username: reqUsername } = req.body;
-
-  // search for a document matching the username
-  User.findOne(
-    {
-      username: reqUsername,
-    },
-    (errFound, userFound) => {
-      if (errFound) {
-        console.log('findOne() error');
-      }
-      // findOne() returns either **null** or a **document** matching the search
-      if (userFound) {
-        // if a document is found, return a message detailing how the name is not available
-        res.send('username already taken');
-      } else {
-        // else create a document for the input username
-        // detail log as an empty array
-        const user = new User({
-          username: reqUsername,
-          log: [],
-        });
-        // save the object in the database
-        user.save((errSaved, userSaved) => {
-          if (errSaved) {
-            console.log('save() error');
-          }
-          // display a JSON object detailing the _id and the username
-          const { _id, username } = userSaved;
-          res.json({
-            username,
-            _id,
-          });
-        });
-      }
-    }
-  );
-});
-
-// in the path selected to register an exercise, find and update the document matching the id
-app.post('/api/users/:id?/exercises', (req, res) => {
-  // retrieve the values from the form
-  const {
-    _id,
-    description,
-    duration,
-    dateYear = 2014,
-    dateMonth = 04,
-    dateDay = 01,
-  } = req.body;
-
-  console.log(req.body);
-  // create an instance of the date object, based on the year, month and day value
-  const date = new Date(`${dateYear}-${dateMonth}-${dateDay}`);
-
-  // create a log out of the description, duration and date fields
-  const log = {
-    description,
-    duration,
-    date,
-  };
-
-  // look for a document with a matching _id value
-  User.findOneAndUpdate(
-    {
-      _id,
-    },
-    {
-      // push in the log array the new object detailing the exercise
-      $push: {
-        log,
-      },
-    },
-    {
-      // in the options set new to be true, as to have the function return the updated document
-      new: true,
-    },
-    (errFound, userFound) => {
-      if (errFound) {
-        console.log('findOne() error');
-      }
-      // findOneAndUpdate returns **null** or a matching **document** depending on whether a match is found
-      if (userFound) {
-        //  a match is found, return a JSON object detailing the username and latest exercise
-        const { username } = userFound;
-
-        console.log(username);
-        res.json({
-          _id,
-          username,
+app.post('/api/users/:id?/exercises', (req, res, next) => {
+  let { _id, description, duration, date } = req.body;
+  UserModel.findOne({ _id: _id })
+    .then((user) => {
+      if (!user) throw new Error('Unknown user with _id');
+      date = date || Date.now();
+      return ExerciseModel.create({
+        description,
+        duration,
+        date,
+        _id,
+      }).then((ex) =>
+        res.status(200).send({
+          username: user.username,
           description,
           duration,
-          date: date.toDateString(),
-        });
-      } else {
-        // findOne returns null, detail how the ID does not match an existinfg document
-        res.send('unknown _id');
-      }
-    }
-  );
+          _id,
+          date: moment(ex.date).format('ddd MMMM DD YYYY'),
+        })
+      );
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send(err.message);
+    });
 });
 
-// in the path selected to log the excercises, return the data attached to the userId
-// if existing, otherwise return a JSON object detailing the occurrence
-app.get('/api/users/:id/logs', (req, res) => {
-  const { userId: _id, from, to } = req.query;
-
-  // look in the database for a document matching the userId
-  User.findOne(
-    {
-      _id,
-    },
-    (errFound, userFound) => {
-      if (errFound) {
-        console.log('findOne() error');
-      }
-
-      if (userFound) {
-        // if a user is found, return a JSON object detailing the relevant data
-        const { username, log } = userFound;
-
-        // create a copy of the log array, to be modified as to show the relevant exercises in the right order
-        let responseLog = [...log];
-
-        // if **from** and or **to** are specified in the query string
-        // filter the array considering only the exercises past and or prior to the input values
-        if (from) {
-          const dateFrom = new Date(from);
-          responseLog = responseLog.filter(
-            (exercise) => exercise.date > dateFrom
-          );
-        }
-        if (to) {
-          const dateTo = new Date(to);
-          responseLog = responseLog.filter(
-            (exercise) => exercise.date < dateTo
-          );
-        }
-
-        // update the array sorting the exercises from oldest to newest
-        responseLog = responseLog
-          .sort(
-            (firstExercise, secondExercise) =>
-              firstExercise.date > secondExercise.date
-          )
-          .map((exercise) => ({
-            // detail the fields of the output formatting the date into the desired format
-            description: exercise.description,
-            duration: exercise.duration,
-            date: exercise.date.toDateString(),
-          }));
-
-        // retrieve the length of the updated array
-        const { length: count } = responseLog;
-
-        // return a json object with the pertinent information
-        res.json({
-          _id,
-          username,
-          count,
-          log: responseLog,
-        });
-      } else {
-        // findOne() returns null, detail how the userId does not match an existinfg document
-        res.send('unknown userId');
-      }
-    }
-  );
+app.get('/api/users/:id/logs', (req, res, next) => {
+  let { _id, from, to, limit } = req.query;
+  from = moment(from, 'YYYY-MM-DD').isValid() ? moment(from, 'YYYY-MM-DD') : 0;
+  to = moment(to, 'YYYY-MM-DD').isValid()
+    ? moment(to, 'YYYY-MM-DD')
+    : moment().add(1000000000000);
+  User.findById(_id)
+    .then((user) => {
+      if (!user) throw new Error('Unknown user with _id');
+      Exercise.find({ _id })
+        .where('date')
+        .gte(from)
+        .lte(to)
+        .limit(+limit)
+        .exec()
+        .then((log) =>
+          res.status(200).send({
+            _id,
+            username: user.username,
+            count: log.length,
+            log: log.map((o) => ({
+              description: o.description,
+              duration: o.duration,
+              date: moment(o).format('ddd MMMM DD YYYY'),
+            })),
+          })
+        );
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send(err.message);
+    });
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {

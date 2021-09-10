@@ -18,22 +18,7 @@ mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 //     type: String,
 //   },
 // });
-
-const UserSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-  },
-  log: [],
-});
-
-const UserModel = mongoose.model('User', UserSchema);
-
 const ExerciseSchema = new mongoose.Schema({
-  // _id: {
-  //   type: String,
-  //   required: true,
-  // },
   description: {
     type: String,
     required: true,
@@ -47,7 +32,15 @@ const ExerciseSchema = new mongoose.Schema({
   },
 });
 
-const ExerciseModel = mongoose.model('Exercise', ExerciseSchema);
+const UserSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+  },
+  log: [ExerciseSchema],
+});
+
+const UserModel = mongoose.model('User', UserSchema);
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html');

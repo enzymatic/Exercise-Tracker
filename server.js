@@ -128,12 +128,11 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (!inDatabase) {
       throw new Error('wrong id, try again');
     } else {
-      let exercises = await ExerciseModel.find({ _id });
-
-      // .where('date')
-      // .gte(from)
-      // .lte(to)
-      // .limit(limit);
+      let exercises = await ExerciseModel.find({ _id })
+        .where('date')
+        .gte(from)
+        .lte(to)
+        .limit(limit);
 
       if (!exercises) {
         res.json({

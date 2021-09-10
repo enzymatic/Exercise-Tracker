@@ -83,15 +83,28 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', async (req, res) => {
-  let { limit } = req.query;
+  let { from: fromL, to: toL, limit } = req.query;
   let { _id } = req.params;
 
-  let from = req.query.from
-    ? new Date(req.query.from).getTime()
-    : new Date().getTime();
-  let to = req.query.to
-    ? new Date(req.query.to).getTime()
-    : new Date().getTime();
+  if (fromL && toL) {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    let from;
+    let to;
+
+    from = Date.parse(new Date(fromL));
+    to = Date.parse(new Date(toL));
+  } else {
+    from = Date.parse(new Date('1111-11-11'));
+    to = Date.parse(new Date());
+  }
+
+  // let from = req.query.from
+  //   ? new Date(req.query.from).getTime()
+  //   : new Date().getTime();
+  // let to = req.query.to
+  //   ? new Date(req.query.to).getTime()
+  //   : new Date().getTime();
 
   console.log(from);
 

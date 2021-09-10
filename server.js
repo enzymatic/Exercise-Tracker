@@ -143,12 +143,12 @@ app.get('/api/users/:_id/logs', async (req, res) => {
           {
             description: 'test',
             duration: 60,
-            date: 'Mon Jan 01 1990',
+            date: new Date().toDateString(),
           },
           {
             description: 'test',
             duration: 60,
-            date: 'Mon Jan 01 1990',
+            date: new Date().toDateString(),
           },
         ],
       });

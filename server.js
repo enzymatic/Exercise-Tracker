@@ -101,13 +101,21 @@ app.post('/api/users/:id/exercises', async (req, res) => {
 
       await inDatabase.save();
 
-      res.json({
-        _id: user._id,
-        username: user.username,
-        date: new Date().toDateString(),
-        duration: inDatabase.duration,
-        description,
-      });
+      res.json(
+        Object.assign(user, {
+          date: new Date().toDateString(),
+          duration: inDatabase.duration,
+          description,
+        })
+      );
+
+      // res.json({
+      //   _id: user._id,
+      //   username: user.username,
+      //   date: new Date().toDateString(),
+      //   duration: inDatabase.duration,
+      //   description,
+      // });
     }
   } catch (error) {
     res.json({ error: error.message });

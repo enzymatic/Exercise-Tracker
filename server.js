@@ -85,43 +85,97 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.post('/api/users/:id/exercises', async (req, res) => {
-  let { _id, description, duration } = req.body;
+app.post('/api/users/:_id/exercises', (req, res) => {
+  const userId = req.params._id;
+  console.log('*************************************');
+  console.log('GOT _ID FOR NEW EXERCISE: ' + userId);
 
-  let inDatabase;
+  const { duration, description } = req.body;
+  //const date = req.body.date;
   let date = req.body.date ? new Date(req.body.date) : new Date();
+  // if(!date){
+  //   //var todayDate = new Date().toDateString();
+  //   var todayDateISO = new Date().toISOString().slice(0, 10);
+  //   var todayDate = new Date().toDateString();
+  // } else {
+  //   var dateFormatted = new Date(date).toDateString();
+  // }
+  if (userId && duration && description) {
+    UserModel.findById(userId, (err, data) => {
+      if (!data) {
+        res.send('Unknown userId');
+        console.log('UNKNOWN USERID TRIGGERED');
+      } else {
+        const username = data.username;
+        const newExercise = new ExerciseModel({
+          userId,
+          username,
+          date: date.toDateString(),
+          duration,
+          description,
+        });
 
-  console.log(req.body);
-  try {
-    let user = await UserModel.findById(_id);
-
-    console.log(user);
-
-    if (!user) {
-      throw new Error('wrong id');
-    } else {
-      inDatabase = new ExerciseModel({
-        _id,
-        username: user.username,
-        date: date.toDateString(),
-        duration,
-        description,
-      });
-
-      await inDatabase.save();
-
-      res.json({
-        username: inDatabase.username,
-        description: inDatabase.description,
-        duration: inDatabase.duration * 1,
-        date: inDatabase.date,
-        _id: inDatabase._id,
-      });
-    }
-  } catch (error) {
-    res.json({ error: error.message });
+        newExercise.save((err, data) => {
+          if (err) console.error(err);
+          console.log('EXERCISE ADDED: ', {
+            _id: userId,
+            username,
+            date: date.toDateString(),
+            duration,
+            description,
+          });
+          res.json({
+            _id: userId,
+            username,
+            date: date.toDateString(),
+            duration: parseInt(duration),
+            description,
+          });
+        });
+      }
+    });
+  } else {
+    res.send('Please fill in all required fields.');
   }
 });
+
+// app.post('/api/users/:id/exercises', async (req, res) => {
+//   let { _id, description, duration } = req.body;
+
+//   let inDatabase;
+//   let date = req.body.date ? new Date(req.body.date) : new Date();
+
+//   console.log(req.body);
+//   try {
+//     let user = await UserModel.findById(_id);
+
+//     console.log(user);
+
+//     if (!user) {
+//       throw new Error('wrong id');
+//     } else {
+//       inDatabase = new ExerciseModel({
+//         _id,
+//         username: user.username,
+//         date: date.toDateString(),
+//         duration,
+//         description,
+//       });
+
+//       await inDatabase.save();
+
+//       res.json({
+//         username: inDatabase.username,
+//         description: inDatabase.description,
+//         duration: inDatabase.duration * 1,
+//         date: inDatabase.date,
+//         _id: inDatabase._id,
+//       });
+//     }
+//   } catch (error) {
+//     res.json({ error: error.message });
+//   }
+// });
 
 app.get('/api/users/:id/logs', async (req, res) => {
   let { _id, from, to, limit } = req.query;

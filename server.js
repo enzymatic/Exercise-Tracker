@@ -138,7 +138,7 @@ app.get('/api/users/:_id/logs', (req, res) => {
 
       ExerciseModel.find({ _id })
         .select(['description', 'date', 'duration'])
-        .limit(limit)
+        .limit(3)
         .sort({ date: -1 })
         .exec((err, data) => {
           if (err) console.error(err);

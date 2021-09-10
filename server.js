@@ -143,40 +143,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
   res.json({
     _id,
     username: user.username,
-    count: temp.length * 1,
-    log: temp,
-  });
-});
-
-app.get('/api/users/:_id/logs?from&to&limit', async (req, res) => {
-  const { _id, from, to, limit } = req.query;
-
-  let user = await UserModel.findById(_id);
-
-  let temp = await ExerciseModel.find({ _id }).select([
-    'description',
-    'date',
-    'duration',
-  ]);
-
-  if (from) {
-    const fromDate = new Date(from);
-    temp = temp.filter((exe) => new Date(exe.date) > fromDate);
-  }
-
-  if (to) {
-    const toDate = new Date(to);
-    temp = temp.filter((exe) => new Date(exe.date) < toDate);
-  }
-
-  if (limit) {
-    temp = temp.slice(0, limit);
-  }
-
-  res.json({
-    _id,
-    username: user.username,
-    count: temp.length * 1,
+    count: parseInt(temp.length),
     log: temp,
   });
 });

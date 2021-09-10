@@ -82,29 +82,78 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.get('/api/users/:_id/logs', async (req, res) => {
-  let { from: fromL, to: toL, limit } = req.query;
+app.get('/api/users/:_id/logs?from&to&limit', async (req, res) => {
+  let { limit } = req.query;
   let { _id } = req.params;
 
-  if (fromL && toL) {
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
-    let from;
-    let to;
+  let from = req.query.from
+    ? new Date(req.query.from).getTime()
+    : new Date('1970-01-01').getTime();
+  let to = req.query.to
+    ? new Date(req.query.to).getTime()
+    : new Date().getTime();
 
-    from = Date.parse(new Date(fromL));
-    to = Date.parse(new Date(toL));
-  } else {
-    from = Date.parse(new Date('1111-11-11'));
-    to = Date.parse(new Date());
+  console.log(from);
+
+  try {
+    let user = await UserModel.findById(_id);
+
+    if (!user) {
+      throw new Error('wrong id, try again');
+    } else {
+      let exercises = await ExerciseModel.find({ _id }).select([
+        'description',
+        'duration',
+        'date',
+      ]);
+
+      console.log(exercises);
+      if (!exercises) {
+        res.json({
+          username: user.username,
+          count: 0,
+          _id: user._id,
+          log: [],
+        });
+      } else {
+        res.json({
+          username: user.username,
+          count: exercises.length,
+          _id: user._id,
+          log: [
+            ...exercises
+              .filter((exercise) => {
+                let newEle = new Date(exercise.date).getTime();
+                return newEle >= from && newEle <= to;
+              })
+              .slice(0, limit)
+              .map(({ description, duration, date: oldDate }) => {
+                let date = new Date(oldDate).toDateString();
+                return {
+                  description,
+                  duration,
+                  date,
+                };
+              }),
+          ],
+        });
+      }
+    }
+  } catch (error) {
+    res.json({ error: 'something went wrong' });
   }
+});
 
-  // let from = req.query.from
-  //   ? new Date(req.query.from).getTime()
-  //   : new Date().getTime();
-  // let to = req.query.to
-  //   ? new Date(req.query.to).getTime()
-  //   : new Date().getTime();
+app.get('/api/users/:_id/logs', async (req, res) => {
+  let { limit } = req.query;
+  let { _id } = req.params;
+
+  let from = req.query.from
+    ? new Date(req.query.from).getTime()
+    : new Date('1970-01-01').getTime();
+  let to = req.query.to
+    ? new Date(req.query.to).getTime()
+    : new Date().getTime();
 
   console.log(from);
 

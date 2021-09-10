@@ -103,7 +103,7 @@ app.post('/api/users/:_id?/exercises', async (req, res) => {
       console.log('inDatabase');
       console.log(inDatabase);
       res.json({
-        username: user.username,
+        user,
         description: inDatabase.description,
         duration: inDatabase.duration,
         _id: inDatabase._id,

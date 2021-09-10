@@ -88,10 +88,12 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
   let from = req.query.from
     ? new Date(req.query.from).getTime()
-    : new Date('1111-11-11').getTime();
+    : new Date('1971-11-11').getTime();
   let to = req.query.to
     ? new Date(req.query.to).getTime()
     : new Date().getTime();
+
+  console.log(from);
 
   try {
     let user = await UserModel.findById(_id);

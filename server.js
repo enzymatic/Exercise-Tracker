@@ -125,17 +125,17 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     inDatabase = await UserModel.findById(_id);
 
     console.log(inDatabase);
-
     if (!inDatabase) {
       throw new Error('wrong id, try again');
     } else {
-      inDatabase = await ExerciseModel.findById(_id)
-        .where('date')
-        .gte(from)
-        .lte(to)
-        .limit(limit);
+      let exercises = await ExerciseModel.find({ _id });
 
-      if (!inDatabase) {
+      // .where('date')
+      // .gte(from)
+      // .lte(to)
+      // .limit(limit);
+
+      if (!exercises) {
         res.json({
           username: 'fcc_tet',
           count: 0,
@@ -145,11 +145,16 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       } else {
         res.json({
           username: 'fcc_test',
-          count: inDatabase.length,
+          count: exercises.length,
           _id: '5fb5853f734231456ccb3b05',
           log: [
-            inDatabase.map(({ description, duration, date }) => {
-              description, duration, date.toDateString();
+            ...exercises.map(({ description, duration, date: oldDate }) => {
+              let date = new Date(oldDate).toDateString();
+              return {
+                description,
+                duration,
+                date,
+              };
             }),
           ],
         });

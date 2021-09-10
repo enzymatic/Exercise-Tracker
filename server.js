@@ -90,65 +90,31 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   const { duration, description } = req.body;
   let date = req.body.date ? new Date(req.body.date) : new Date();
 
-  const user = await UserModel.findById(_id);
-  if (!user) {
-    res.send('Wrong id');
-  } else {
-    const username = user.username;
-    await ExerciseModel.create({
-      _id,
-      username,
-      date: date.toDateString(),
-      duration,
-      description,
-    });
-    res.json({
-      _id,
-      username,
-      date: date.toDateString(),
-      duration: parseInt(duration),
-      description,
-    });
+  try {
+    const user = await UserModel.findById(_id);
+    if (!user) {
+      res.send('Wrong id');
+    } else {
+      const username = user.username;
+      await ExerciseModel.create({
+        _id,
+        username,
+        date: date.toDateString(),
+        duration,
+        description,
+      });
+      res.json({
+        _id,
+        username,
+        date: date.toDateString(),
+        duration: parseInt(duration),
+        description,
+      });
+    }
+  } catch (error) {
+    res.json({ error: error.message });
   }
 });
-
-// app.post('/api/users/:id/exercises', async (req, res) => {
-//   let { _id, description, duration } = req.body;
-
-//   let inDatabase;
-//   let date = req.body.date ? new Date(req.body.date) : new Date();
-
-//   console.log(req.body);
-//   try {
-//     let user = await UserModel.findById(_id);
-
-//     console.log(user);
-
-//     if (!user) {
-//       throw new Error('wrong id');
-//     } else {
-//       inDatabase = new ExerciseModel({
-//         _id,
-//         username: user.username,
-//         date: date.toDateString(),
-//         duration,
-//         description,
-//       });
-
-//       await inDatabase.save();
-
-//       res.json({
-//         username: inDatabase.username,
-//         description: inDatabase.description,
-//         duration: parseInt(inDatabase.duration),
-//         date: inDatabase.date,
-//         _id: inDatabase._id,
-//       });
-//     }
-//   } catch (error) {
-//     res.json({ error: error.message });
-//   }
-// });
 
 app.get('/api/users/:id/logs', async (req, res) => {
   let { _id, from, to, limit } = req.query;

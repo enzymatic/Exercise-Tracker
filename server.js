@@ -101,8 +101,8 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     } else {
       let exercises = await ExerciseModel.find({ _id })
         .where('date')
-        .gte(from)
-        .lte(to)
+        // .gte(from)
+        // .lte(to)
         .limit(limit);
 
       if (!exercises) {
@@ -118,14 +118,20 @@ app.get('/api/users/:_id/logs', async (req, res) => {
           count: exercises.length,
           _id: user._id,
           log: [
-            ...exercises.map(({ description, duration, date: oldDate }) => {
-              let date = new Date(oldDate).toDateString();
-              return {
-                description,
-                duration,
-                date,
-              };
-            }),
+            ...exercises
+              .filter((element) => {
+                let newEle = new Date(element.date).getTime();
+                if (newEle >= from && newEle <= to);
+                return newEle >= from && newEle <= to;
+              })
+              .map(({ description, duration, date: oldDate }) => {
+                let date = new Date(oldDate).toDateString();
+                return {
+                  description,
+                  duration,
+                  date,
+                };
+              }),
           ],
         });
       }

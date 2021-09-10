@@ -116,16 +116,16 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', (req, res) => {
-  const userId = req.params._id,
-    { limit } = req.query;
-  var from = req.query.from
+  let _id = req.params._id,
+    { limit = -1 } = req.query;
+  let from = req.query.from
     ? new Date(req.query.from).getTime()
     : new Date('1111-11-11').getTime();
-  var to = req.query.to
+  let to = req.query.to
     ? new Date(req.query.to).getTime()
     : new Date().getTime();
 
-  UserModel.findById(userId, (err, data) => {
+  UserModel.findById(_id, (err, data) => {
     if (err) console.error(err);
 
     if (!data) {
@@ -136,13 +136,15 @@ app.get('/api/users/:_id/logs', (req, res) => {
       console.log('USER LOG SEARCHED: ' + username);
       console.log('from: ' + from, 'to: ' + to);
 
-      ExerciseModel.find({ userId: userId } /*, {"date": {$gte: from, $lte: to}}*/)
+      ExerciseModel.find({ _id })
         .select(['description', 'date', 'duration'])
-        .limit(+limit)
+        .limit(limit)
         .sort({ date: -1 })
         .exec((err, data) => {
           if (err) console.error(err);
           let count = 0;
+
+          console.log('data', data);
           let customData = data
             .filter((element) => {
               let newEle = new Date(element.date).getTime();
@@ -159,14 +161,14 @@ app.get('/api/users/:_id/logs', (req, res) => {
             });
           if (!data) {
             res.json({
-              _id: userId,
+              _id,
               username: username,
               count: 0,
               log: [],
             });
           } else {
             res.json({
-              _id: userId,
+              _id,
               username: username,
               count: count,
               log: customData,

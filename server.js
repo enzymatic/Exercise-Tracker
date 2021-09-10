@@ -88,7 +88,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
   let from = req.query.from
     ? new Date(req.query.from).getTime()
-    : new Date('1971-11-11').getTime();
+    : new Date().getTime();
   let to = req.query.to
     ? new Date(req.query.to).getTime()
     : new Date().getTime();

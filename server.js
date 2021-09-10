@@ -35,7 +35,12 @@ const ExerciseSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: new Date().toDateString,
+    default: new Date().toLocaleTimeString('en-us', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }),
   },
 });
 

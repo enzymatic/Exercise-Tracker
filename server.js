@@ -116,67 +116,130 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:_id/logs', async (req, res) => {
-  const _id = req.params._id;
-  let { limit } = req.query;
-  let from = req.query.from
+app.get('/api/users/:_id/logs', (req, res) => {
+  const userId = req.params._id,
+    { limit } = req.query;
+  var from = req.query.from
     ? new Date(req.query.from).getTime()
-    : new Date().getTime();
-  let to = req.query.to
+    : new Date('1111-11-11').getTime();
+  var to = req.query.to
     ? new Date(req.query.to).getTime()
     : new Date().getTime();
 
-  try {
-    const user = await UserModel.findById(_id);
+  UserModel.findById(userId, (err, data) => {
+    if (err) console.error(err);
 
-    if (!user) {
-      res.send('wrong id');
+    if (!data) {
+      res.send('Unknown userId');
     } else {
-      const username = user.username;
+      const username = data.username;
+      console.log('*************************************');
+      console.log('USER LOG SEARCHED: ' + username);
+      console.log('from: ' + from, 'to: ' + to);
 
-      let inDatabase = await ExerciseModel.find({ _id })
+      ExerciseModel.find(
+        { userId: userId } /*, {"date": {$gte: from, $lte: to}}*/
+      )
         .select(['description', 'date', 'duration'])
         .limit(+limit)
-        .sort({ date: -1 });
-
-      if (!inDatabase) {
-        throw new Error('no logs for this user');
-      }
-      let count = 0;
-      let filtered = inDatabase
-        .filter((element) => {
-          let newEle = new Date(element.date).getTime();
-          if (newEle >= from && newEle <= to) count++;
-          return newEle >= from && newEle <= to;
-        })
-        .map((element) => {
-          let newDate = new Date(element.date).toDateString();
-          return {
-            description: element.description,
-            duration: element.duration,
-            date: newDate,
-          };
+        .sort({ date: -1 })
+        .exec((err, data) => {
+          if (err) console.error(err);
+          let count = 0;
+          let customData = data
+            .filter((element) => {
+              let newEle = new Date(element.date).getTime();
+              if (newEle >= from && newEle <= to) count++;
+              return newEle >= from && newEle <= to;
+            })
+            .map((element) => {
+              let newDate = new Date(element.date).toDateString();
+              return {
+                description: element.description,
+                duration: element.duration,
+                date: newDate,
+              };
+            });
+          if (!data) {
+            res.json({
+              _id: userId,
+              username: username,
+              count: 0,
+              log: [],
+            });
+          } else {
+            res.json({
+              _id: userId,
+              username: username,
+              count: count,
+              log: customData,
+            });
+          }
         });
-      // if (!inDatabase) {
-      //   res.json({
-      //     _id: _id,
-      //     username: username,
-      //     count: 0,
-      //     log: [],
-      //   });
-      // } else {
-      res.json({
-        _id: _id,
-        username: username,
-        count: count,
-        log: filtered,
-      });
-      // }
     }
-  } catch (error) {
-    res.json({ error: error.message });
-  }
+  });
 });
+// app.get('/api/users/:_id/logs', async (req, res) => {
+//   const _id = req.params._id;
+//   let { limit } = req.query;
+//   let from = req.query.from
+//     ? new Date(req.query.from).getTime()
+//     : new Date().getTime();
+//   let to = req.query.to
+//     ? new Date(req.query.to).getTime()
+//     : new Date().getTime();
+
+//   try {
+//     const user = await UserModel.findById(_id);
+
+//     if (!user) {
+//       res.send('wrong id');
+//     } else {
+//       const username = user.username;
+
+//       let inDatabase = await ExerciseModel.find({ _id })
+//         .select(['description', 'date', 'duration'])
+//         .limit(+limit)
+//         .sort({ date: -1 });
+
+//       if (!inDatabase) {
+//         throw new Error('no logs for this user');
+//       }
+//       let count = 0;
+//       let filtered = inDatabase
+//         .filter((element) => {
+//           let newEle = new Date(element.date).getTime();
+//           if (newEle >= from && newEle <= to) count++;
+//           return newEle >= from && newEle <= to;
+//         })
+//         .map((element) => {
+//           let newDate = new Date(element.date).toDateString();
+//           return {
+//             description: element.description,
+//             duration: element.duration,
+//             date: newDate,
+//           };
+//         });
+//       // if (!inDatabase) {
+//       //   res.json({
+//       //     _id: _id,
+//       //     username: username,
+//       //     count: 0,
+//       //     log: [],
+//       //   });
+//       // } else {
+//       res.json({
+//         _id: _id,
+//         username: username,
+//         count: count,
+//         log: filtered,
+//       });
+//       // }
+//     }
+//   } catch (error) {
+//     res.json({ error: error.message });
+//   }
+// });
 
 // app.get('/api/users/:id/logs', async (req, res) => {
 //   let { _id, from, to, limit } = req.query;

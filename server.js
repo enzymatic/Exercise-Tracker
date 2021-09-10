@@ -145,6 +145,11 @@ app.get('/api/users/:_id/logs', async (req, res) => {
             duration: 60,
             date: 'Mon Jan 01 1990',
           },
+          {
+            description: 'test',
+            duration: 60,
+            date: 'Mon Jan 01 1990',
+          },
         ],
       });
 

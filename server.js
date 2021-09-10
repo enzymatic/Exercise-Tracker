@@ -115,7 +115,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:_id/logs', (req, res) => {
+app.get('/api/users/:_id/logs?from&to&limit', (req, res) => {
   let _id = req.params._id;
   let { limit } = req.query;
   let from = req.query.from
@@ -138,7 +138,7 @@ app.get('/api/users/:_id/logs', (req, res) => {
 
       ExerciseModel.find({ _id })
         .select(['description', 'date', 'duration'])
-        .limit(3)
+        .limit(limit)
         .sort({ date: -1 })
         .exec((err, data) => {
           if (err) console.error(err);

@@ -135,7 +135,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   console.log(_id);
 
   let log = {
-    duration,
+    duration: parseInt(duration),
     description,
     date: date.toDateString(),
   };

@@ -137,7 +137,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
       res.json({
         username: 'fcc_test',
-        count: 0,
+        count: 1,
         _id: '5fb5853f734231456ccb3b05',
         log: [
           {

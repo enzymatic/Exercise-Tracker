@@ -14,18 +14,9 @@ mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 
 ///////////////models///////////////
 const UserSchema = new mongoose.Schema({
-  // username: {
-  //   type: String,
-  // },
-  username: { type: String, required: true },
-  count: { type: Number, default: 0 },
-  log: [
-    {
-      description: { type: String },
-      duration: { type: Number },
-      date: { type: Date },
-    },
-  ],
+  username: {
+    type: String,
+  },
 });
 
 const UserModel = mongoose.model('User', UserSchema);
@@ -125,39 +116,43 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', (req, res) => {
-  UserModel.findById(req.params._id, (error, result) => {
-    if (!error) {
-      let resObj = result;
+  const userid = req.params._id;
 
-      if (req.query.from || req.query.to) {
-        let fromDate = new Date(0);
-        let toDate = new Date();
+  const findAllExercisesByUser = (userId, done) => {
+    UserModel.findById(userId, (err, user) => {
+      if (err) return done(err);
+      if (!user) return done(null, { error: 'Invalid userid' });
+      ExerciseModel.find({ userid: userId }, (err, exercises) => {
+        if (err) return done(err);
+        const res = {
+          _id: user._id,
+          username: user.username,
+          log: exercises,
+          count: exercises.length,
+        };
+        done(null, res);
+      });
+    });
+  };
 
-        if (req.query.from) {
-          fromDate = new Date(req.query.from);
-        }
-
-        if (req.query.to) {
-          toDate = new Date(req.query.to);
-        }
-
-        fromDate = fromDate.getTime();
-        toDate = toDate.getTime();
-
-        resObj.log = resObj.log.filter((session) => {
-          let sessionDate = new Date(session.date).getTime();
-
-          return sessionDate >= fromDate && sessionDate <= toDate;
-        });
+  findAllExercisesByUser(userid, (err, data) => {
+    if (err) {
+      return res.json({ err });
+    } else {
+      const [from, to, limit] = [req.query.from, req.query.to, req.query.limit];
+      if (from) {
+        data.log = data.log.filter((el) => new Date(el.date) >= new Date(from));
+        data.count = data.log.length;
       }
-
-      if (req.query.limit) {
-        resObj.log = resObj.log.slice(0, req.query.limit);
+      if (to) {
+        data.log = data.log.filter((el) => new Date(el.date) <= new Date(to));
+        data.count = data.log.length;
       }
-
-      resObj = resObj.toJSON();
-      resObj['count'] = result.log.length;
-      res.json(resObj);
+      if (limit) {
+        data.log = data.log.slice(0, limit);
+        data.count = data.log.length;
+      }
+      return res.json(data);
     }
   });
 });

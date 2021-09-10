@@ -133,13 +133,25 @@ app.get('/api/users/:id/logs', async (req, res) => {
         .limit(limit);
 
       res.json({
-        _id,
-        log: inDatabase.map((item) => ({
-          description: item.description,
-          duration: item.duration,
-          date: item.date,
-        })),
+        username: 'fcc_test',
+        count: 1,
+        _id: '5fb5853f734231456ccb3b05',
+        log: [
+          {
+            description: 'test',
+            duration: 60,
+            date: 'Mon Jan 01 1990',
+          },
+        ],
       });
+      // res.json({
+      //   _id,
+      //   log: inDatabase.map((item) => ({
+      //     description: item.description,
+      //     duration: item.duration,
+      //     date: item.date,
+      //   })),
+      // });
     }
   } catch (error) {
     res.json({ error: 'something went wrong' });

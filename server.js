@@ -26,6 +26,10 @@ const ExerciseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  username: {
+    type: String,
+    required: true,
+  },
   description: {
     type: String,
     required: true,
@@ -91,12 +95,14 @@ app.post('/api/users/:id/exercises', async (req, res) => {
   try {
     let user = await UserModel.findById(_id);
 
+    console.log(user);
+
     if (!user) {
       throw new Error('wrong id');
     } else {
       inDatabase = new ExerciseModel({
         _id,
-        username,
+        username: user.username,
         date: date.toDateString(),
         duration,
         description,
@@ -105,11 +111,11 @@ app.post('/api/users/:id/exercises', async (req, res) => {
       await inDatabase.save();
 
       res.json({
-        _id,
-        username: user.username,
-        date: date.toDateString(),
+        _id: inDatabase._id,
+        username: inDatabase.username,
+        date: inDatabase.date,
         duration: inDatabase.duration * 1,
-        description,
+        description: inDatabase.description,
       });
     }
   } catch (error) {

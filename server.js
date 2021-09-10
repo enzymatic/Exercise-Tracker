@@ -116,35 +116,101 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:id/logs', async (req, res) => {
-  let { _id, from, to, limit } = req.query;
-  let inDatabase;
+app.get('/api/users/:id/logs', (req, res) => {
+  const { userId: _id, from, to } = req.query;
 
-  try {
-    inDatabase = await UserModel.findById(_id);
+  // look in the database for a document matching the userId
+  User.findOne(
+    {
+      _id,
+    },
+    (errFound, userFound) => {
+      if (errFound) {
+        console.log('findOne() error');
+      }
 
-    if (!inDatabase) {
-      throw new Error('wrong id');
-    } else {
-      inDatabase = await ExerciseModel.findById(_id)
-        .where('date')
-        .gte(from)
-        .lte(to)
-        .limit(limit);
+      if (userFound) {
+        // if a user is found, return a JSON object detailing the relevant data
+        const { username, log } = userFound;
 
-      res.json({
-        _id,
-        log: inDatabase.map((item) => ({
-          description: item.description,
-          duration: item.duration,
-          date: item.date,
-        })),
-      });
+        // create a copy of the log array, to be modified as to show the relevant exercises in the right order
+        let responseLog = [...log];
+
+        // if **from** and or **to** are specified in the query string
+        // filter the array considering only the exercises past and or prior to the input values
+        if (from) {
+          const dateFrom = new Date(from);
+          responseLog = responseLog.filter(
+            (exercise) => exercise.date > dateFrom
+          );
+        }
+        if (to) {
+          const dateTo = new Date(to);
+          responseLog = responseLog.filter(
+            (exercise) => exercise.date < dateTo
+          );
+        }
+
+        // update the array sorting the exercises from oldest to newest
+        responseLog = responseLog
+          .sort(
+            (firstExercise, secondExercise) =>
+              firstExercise.date > secondExercise.date
+          )
+          .map((exercise) => ({
+            // detail the fields of the output formatting the date into the desired format
+            description: exercise.description,
+            duration: exercise.duration,
+            date: exercise.date.toDateString(),
+          }));
+
+        // retrieve the length of the updated array
+        const { length: count } = responseLog;
+
+        // return a json object with the pertinent information
+        res.json({
+          _id,
+          username,
+          count,
+          log: responseLog,
+        });
+      } else {
+        // findOne() returns null, detail how the userId does not match an existinfg document
+        res.send('unknown userId');
+      }
     }
-  } catch (error) {
-    res.json({ error: 'something went wrong' });
-  }
+  );
 });
+
+// app.get('/api/users/:id/logs', async (req, res) => {
+//   let { _id, from, to, limit } = req.query;
+//   let inDatabase;
+
+//   try {
+//     inDatabase = await UserModel.findById(_id);
+
+//     if (!inDatabase) {
+//       throw new Error('wrong id');
+//     } else {
+//       inDatabase = await ExerciseModel.findById(_id)
+//         .where('date')
+//         .gte(from)
+//         .lte(to)
+//         .limit(limit);
+
+//       res.json({
+//         _id,
+//         log: inDatabase.map((item) => ({
+//           description: item.description,
+//           duration: item.duration,
+//           date: item.date,
+//         })),
+//       });
+//     }
+//   } catch (error) {
+//     res.json({ error: 'something went wrong' });
+//   }
+// });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port);

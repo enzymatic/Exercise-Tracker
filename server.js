@@ -40,7 +40,6 @@ const ExerciseSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    // default: ,
   },
 });
 
@@ -119,7 +118,6 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 app.get('/api/users/:_id/logs', async (req, res) => {
   let { limit = -1 } = req.query;
   let { _id } = req.params;
-  let inDatabase;
 
   let from = req.query.from
     ? new Date(req.query.from).getTime()
@@ -129,10 +127,9 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     : new Date().getTime();
 
   try {
-    inDatabase = await UserModel.findById(_id);
+    let user = await UserModel.findById(_id);
 
-    console.log(inDatabase);
-    if (!inDatabase) {
+    if (!user) {
       throw new Error('wrong id, try again');
     } else {
       let exercises = await ExerciseModel.find({ _id })
@@ -143,16 +140,16 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
       if (!exercises) {
         res.json({
-          username: 'fcc_tet',
+          username: user.username,
           count: 0,
-          _id: '5fb5853f734231456ccb3b05',
+          _id: user._id,
           log: [],
         });
       } else {
         res.json({
-          username: 'fcc_test',
+          username: user.username,
           count: exercises.length,
-          _id: '5fb5853f734231456ccb3b05',
+          _id: user._id,
           log: [
             ...exercises.map(({ description, duration, date: oldDate }) => {
               let date = new Date(oldDate).toDateString();
@@ -165,71 +162,6 @@ app.get('/api/users/:_id/logs', async (req, res) => {
           ],
         });
       }
-
-      // res.json({
-      //   username: 'fcc_test',
-      //   count: 1,
-      //   _id: '5fb5853f734231456ccb3b05',
-      //   log: [
-      //     {
-      //       description: 'test',
-      //       duration: 60,
-      //       date: new Date().toDateString(),
-      //     },
-      //     {
-      //       description: 'test',
-      //       duration: 60,
-      //       date: new Date().toDateString(),
-      //     },
-      //   ],
-      // });
-
-      // ExerciseModel.find({ _id })
-      //   .select(['description', 'date', 'duration'])
-      //   .limit(+limit)
-      //   .sort({ date: -1 })
-      //   .exec((err, data) => {
-      //     if (err) console.error(err);
-      //     let count = 0;
-      //     let customData = data
-      //       .filter((element) => {
-      //         let newEle = new Date(element.date).getTime();
-      //         if (newEle >= from && newEle <= to) count++;
-      //         return newEle >= from && newEle <= to;
-      //       })
-      //       .map((element) => {
-      //         let newDate = new Date(element.date).toDateString();
-      //         return {
-      //           description: element.description,
-      //           duration: element.duration,
-      //           date: newDate,
-      //         };
-      //       });
-      //     if (!data) {
-      //       res.json({
-      //         _id: userId,
-      //         username: username,
-      //         count: 0,
-      //         log: [],
-      //       });
-      //     } else {
-      //       res.json({
-      //         _id: userId,
-      //         username: username,
-      //         count: count,
-      //         log: customData,
-      //       });
-      //     }
-      //   });
-
-      // res.json({
-      //   _id,
-      //   log: inDatabase.map((item) => ({
-      //     description: item.description,
-      //     duration: item.duration,
-      //     date: item.date,
-      //   })),
-      // });
     }
   } catch (error) {
     res.json({ error: 'something went wrong' });

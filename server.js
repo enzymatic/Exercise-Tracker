@@ -81,7 +81,8 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.post('/api/users/:id?/exercises', async (req, res) => {
+app.post('/asd', async (req, res) => {
+  // app.post('/api/users/:id?/exercises', async (req, res) => {
   let { id, description, duration, date } = req.body;
   let inDatabase;
 

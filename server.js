@@ -117,11 +117,14 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', async (req, res) => {
-  let { _id, from, to, limit } = req.query;
+  let { from, to, limit } = req.query;
+  let { _id } = req.params;
   let inDatabase;
 
   try {
     inDatabase = await UserModel.findById(_id);
+
+    console.log(inDatabase);
 
     if (!inDatabase) {
       throw new Error('wrong id');

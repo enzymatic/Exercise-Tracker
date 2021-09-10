@@ -135,16 +135,25 @@ app.get('/api/users/:_id/logs', async (req, res) => {
         .lte(to)
         .limit(limit);
 
-      res.json({
-        username: 'fcc_test',
-        count: inDatabase.length,
-        _id: '5fb5853f734231456ccb3b05',
-        log: [
-          inDatabase.map(({ description, duration, date }) => {
-            description, duration, date.toDateString();
-          }),
-        ],
-      });
+      if (!inDatabase) {
+        res.json({
+          username: 'fcc_tet',
+          count: 0,
+          _id: '5fb5853f734231456ccb3b05',
+          log: [],
+        });
+      } else {
+        res.json({
+          username: 'fcc_test',
+          count: inDatabase.length,
+          _id: '5fb5853f734231456ccb3b05',
+          log: [
+            inDatabase.map(({ description, duration, date }) => {
+              description, duration, date.toDateString();
+            }),
+          ],
+        });
+      }
 
       // res.json({
       //   username: 'fcc_test',

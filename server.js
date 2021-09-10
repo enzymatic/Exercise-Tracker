@@ -116,7 +116,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:id/logs?from&to&limit', async (req, res) => {
+app.get('/api/users/:_id/logs?from&to&limit', async (req, res) => {
   let { _id, from, to, limit } = req.query;
   let inDatabase;
 

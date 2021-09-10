@@ -117,9 +117,16 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', async (req, res) => {
-  let { from, to, limit } = req.query;
+  let { limit = -1 } = req.query;
   let { _id } = req.params;
   let inDatabase;
+
+  let from = req.query.from
+    ? new Date(req.query.from).getTime()
+    : new Date('1-1-1').getTime();
+  let to = req.query.to
+    ? new Date(req.query.to).getTime()
+    : new Date().getTime();
 
   try {
     inDatabase = await UserModel.findById(_id);

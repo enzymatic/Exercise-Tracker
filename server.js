@@ -21,6 +21,10 @@ const UserSchema = new mongoose.Schema({
 const UserModel = mongoose.model('User', UserSchema);
 
 const ExerciseSchema = new mongoose.Schema({
+  _id: {
+    type: String,
+    required: true,
+  },
   description: {
     type: String,
     required: true,
@@ -32,10 +36,6 @@ const ExerciseSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: new Date().toDateString,
-  },
-  userId: {
-    type: String,
-    required: true,
   },
 });
 
@@ -80,27 +80,29 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.post('/api/users/:userId?/exercises', async (req, res) => {
-  let { userId, description, duration, date } = req.body;
+app.post('/api/users/:_id?/exercises', async (req, res) => {
+  let { _id, description, duration, date } = req.body;
   let inDatabase;
 
+  console.log(req.body);
   try {
-    inDatabase = await UserModel.findById(userId);
+    inDatabase = await UserModel.findById(_id);
 
     if (!inDatabase) {
       throw new Error('wrong id');
     } else {
       inDatabase = new ExerciseModel({
+        _id,
         description,
         duration,
         date,
-        userId,
       });
 
       await inDatabase.save();
 
+      console.log('inDatabase');
+      console.log(inDatabase);
       res.json({
-        username: inDatabase.username,
         description: inDatabase.description,
         duration: inDatabase.duration,
         _id: inDatabase._id,
@@ -108,28 +110,28 @@ app.post('/api/users/:userId?/exercises', async (req, res) => {
       });
     }
   } catch (error) {
-    res.json({ error: 'something went wrong try again' });
+    res.json({ error: error.message });
   }
 });
 
 app.get('/api/users/:id/logs', async (req, res) => {
-  let { userId, from, to, limit } = req.query;
+  let { _id, from, to, limit } = req.query;
   let inDatabase;
 
   try {
-    inDatabase = await UserModel.findById(userId);
+    inDatabase = await UserModel.findById(_id);
 
     if (!inDatabase) {
       throw new Error('wrong id');
     } else {
-      inDatabase = await ExerciseModel.findById(userId)
+      inDatabase = await ExerciseModel.findById(_id)
         .where('date')
         .gte(from)
         .lte(to)
         .limit(limit);
 
       res.json({
-        _id: userId,
+        _id,
         log: inDatabase.map((item) => ({
           description: item.description,
           duration: item.duration,

@@ -115,45 +115,37 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:_id/logs', (req, res, next) => {
-  //get user id
-  console.log('here?');
-  let id = req.params._id;
-  //check if id is not null
-  if (id) {
-    UserModel.findById(id, function (err, doc) {
-      if (err) {
-        return next(err);
-      } else {
-        console.log(doc);
-        //find all exercises which have the same userName
-        ExerciseModel.find({ _id: id }, function (error, data) {
-          //data retrieves array of logs
-          if (error) {
-            return next(error);
-          }
-          //we need to have both FROM and TO
-          if (req.query.from && req.query.to) {
-            data = data.filter(
-              (d) =>
-                Date.parse(d.date) >= Date.parse(req.query.from) &&
-                Date.parse(d.date) <= Date.parse(req.query.to)
-            );
-          }
-          //check if index is smaller then LIMIT
-          if (req.query.limit) {
-            data = data.filter((d, i) => i < req.query.limit);
-          }
-          res.json({
-            _id: doc._id,
-            userName: doc.userName,
-            count: data.length,
-            log: data,
-          });
-        });
-      }
-    });
+app.get('/api/users/:_id/logs', async (req, res) => {
+  const { _id, from, to, limit } = req.params;
+
+  let user = await UserModel.findById(_id);
+
+  let temp = await ExerciseModel.find({ _id }).select([
+    'description',
+    'date',
+    'duration',
+  ]);
+
+  if (from) {
+    const fromDate = new Date(from);
+    temp = temp.filter((exe) => new Date(exe.date) > fromDate);
   }
+
+  if (to) {
+    const toDate = new Date(to);
+    temp = temp.filter((exe) => new Date(exe.date) < toDate);
+  }
+
+  if (limit) {
+    temp = temp.slice(0, limit);
+  }
+
+  res.json({
+    _id,
+    username: user.username,
+    count: temp.length * 1,
+    log: temp,
+  });
 });
 
 // app.get('/api/users/:_id/logs', (req, res) => {

@@ -96,9 +96,10 @@ app.post('/api/users/:id/exercises', async (req, res) => {
     } else {
       inDatabase = new ExerciseModel({
         _id,
-        description,
+        username,
+        date: date.toDateString(),
         duration,
-        date,
+        description,
       });
 
       await inDatabase.save();
@@ -107,7 +108,7 @@ app.post('/api/users/:id/exercises', async (req, res) => {
         _id,
         username: user.username,
         date: date.toDateString(),
-        duration: inDatabase.duration,
+        duration: inDatabase.duration * 1,
         description,
       });
     }

@@ -116,35 +116,97 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:id/logs', async (req, res) => {
-  let { _id, from, to, limit } = req.query;
-  let inDatabase;
+app.get('/api/users/:_id/logs', async (req, res) => {
+  const _id = req.params._id;
+  let { limit } = req.query;
+  let from = req.query.from
+    ? new Date(req.query.from).getTime()
+    : new Date().getTime();
+  let to = req.query.to
+    ? new Date(req.query.to).getTime()
+    : new Date().getTime();
 
   try {
-    inDatabase = await UserModel.findById(_id);
+    const user = await UserModel.findById(_id);
 
-    if (!inDatabase) {
-      throw new Error('wrong id');
+    if (!user) {
+      res.send('wrong id');
     } else {
-      inDatabase = await ExerciseModel.findById(_id)
-        .where('date')
-        .gte(from)
-        .lte(to)
-        .limit(limit);
+      const username = user.username;
 
+      let inDatabase = await ExerciseModel.find({ _id })
+        .select(['description', 'date', 'duration'])
+        .limit(+limit)
+        .sort({ date: -1 });
+
+      if (!inDatabase) {
+        throw new Error('no logs for this user');
+      }
+      let count = 0;
+      let filtered = inDatabase
+        .filter((element) => {
+          let newEle = new Date(element.date).getTime();
+          if (newEle >= from && newEle <= to) count++;
+          return newEle >= from && newEle <= to;
+        })
+        .map((element) => {
+          let newDate = new Date(element.date).toDateString();
+          return {
+            description: element.description,
+            duration: element.duration,
+            date: newDate,
+          };
+        });
+      // if (!inDatabase) {
+      //   res.json({
+      //     _id: _id,
+      //     username: username,
+      //     count: 0,
+      //     log: [],
+      //   });
+      // } else {
       res.json({
-        _id,
-        log: inDatabase.map((item) => ({
-          description: item.description,
-          duration: item.duration,
-          date: item.date,
-        })),
+        _id: _id,
+        username: username,
+        count: count,
+        log: filtered,
       });
+      // }
     }
   } catch (error) {
-    res.json({ error: 'something went wrong' });
+    res.json({ error: error.message });
   }
 });
+
+// app.get('/api/users/:id/logs', async (req, res) => {
+//   let { _id, from, to, limit } = req.query;
+//   let inDatabase;
+
+//   try {
+//     inDatabase = await UserModel.findById(_id);
+
+//     if (!inDatabase) {
+//       throw new Error('wrong id');
+//     } else {
+//       inDatabase = await ExerciseModel.findById(_id)
+//         .where('date')
+//         .gte(from)
+//         .lte(to)
+//         .limit(limit);
+
+//       res.json({
+//         _id,
+//         log: inDatabase.map((item) => ({
+//           description: item.description,
+//           duration: item.duration,
+//           date: item.date,
+//         })),
+//       });
+//     }
+//   } catch (error) {
+//     res.json({ error: 'something went wrong' });
+//   }
+// });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port);

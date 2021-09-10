@@ -135,23 +135,43 @@ app.get('/api/users/:_id/logs', async (req, res) => {
         .lte(to)
         .limit(limit);
 
-      res.json({
-        username: 'fcc_test',
-        count: 1,
-        _id: '5fb5853f734231456ccb3b05',
-        log: [
-          {
-            description: 'test',
-            duration: 60,
-            date: new Date().toDateString(),
-          },
-          {
-            description: 'test',
-            duration: 60,
-            date: new Date().toDateString(),
-          },
-        ],
-      });
+      if (!inDatabase) {
+        res.json({
+          username: 'fcc_test',
+          count: 0,
+          _id: '5fb5853f734231456ccb3b05',
+          log: [],
+        });
+      } else {
+        res.json({
+          username: 'fcc_test',
+          count: inDatabase.length,
+          _id: '5fb5853f734231456ccb3b05',
+          log: [
+            inDatabase.map(({ description, duration, date }) => {
+              description, duration, date.toDateString();
+            }),
+          ],
+        });
+      }
+
+      // res.json({
+      //   username: 'fcc_test',
+      //   count: 1,
+      //   _id: '5fb5853f734231456ccb3b05',
+      //   log: [
+      //     {
+      //       description: 'test',
+      //       duration: 60,
+      //       date: new Date().toDateString(),
+      //     },
+      //     {
+      //       description: 'test',
+      //       duration: 60,
+      //       date: new Date().toDateString(),
+      //     },
+      //   ],
+      // });
 
       // ExerciseModel.find({ _id })
       //   .select(['description', 'date', 'duration'])

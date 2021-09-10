@@ -12,11 +12,18 @@ app.use(express.static('public'));
 
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 
+let someSchema = new mongoose.Schema({
+  date: Date,
+  duration: { type: Number, required: true },
+  description: { type: String, required: true },
+});
+
 ///////////////models///////////////
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
   },
+  log: [someSchema],
 });
 
 const UserModel = mongoose.model('User', UserSchema);
@@ -114,37 +121,46 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     res.json({ error: error.message });
   }
 });
+app.get('/api/users/:_id/logs', (req, res) => {
+  let id = req.params._id;
 
-app.get('/api/users/:_id/logs', async (req, res) => {
-  const { _id, from, to, limit } = req.params;
+  UserModel.findById(id, (error, data) => {
+    if (!error) {
+      let resObj = {};
 
-  let user = await UserModel.findById(_id);
+      if (req.query.from || req.query.to) {
+        let fromDate = new Date(0);
+        let toDate = new Date();
 
-  let temp = await ExerciseModel.find({ _id }).select([
-    'description',
-    'date',
-    'duration',
-  ]);
+        if (req.query.from) {
+          fromDate = new Date(req.query.from);
+        }
+        if (req.query.to) {
+          toDate = new Date(req.query.to);
+        }
 
-  if (from) {
-    const fromDate = new Date(from);
-    temp = temp.filter((exe) => new Date(exe.date) > fromDate);
-  }
+        data.log = data.log.filter((exerciseItem) => {
+          exerciseItemDate = new Date(exerciseItem.date);
 
-  if (to) {
-    const toDate = new Date(to);
-    temp = temp.filter((exe) => new Date(exe.date) < toDate);
-  }
+          return (
+            exerciseItemDate.getTime() >= fromDate.getTime() &&
+            exerciseItemDate.getTime() <= toDate.getTime()
+          );
+        });
+      }
 
-  if (limit) {
-    temp = temp.slice(0, limit);
-  }
+      // This is the first one which stopped
+      if (req.query.limit) {
+        data.log = data.log.slice(0, req.query.limit);
+        console.log(data.log);
+      }
+      resObj['_id'] = data.id;
+      resObj['username'] = data.username;
+      resObj['count'] = data.log.length;
+      resObj['log'] = data.log;
 
-  res.json({
-    _id,
-    username: user.username,
-    count: parseInt(temp.length),
-    log: temp,
+      res.json(resObj);
+    }
   });
 });
 

@@ -87,7 +87,7 @@ app.post('/api/users/:id?/exercises', async (req, res) => {
 
   console.log(req.body);
   try {
-    let user = await UserModel.findById(_id);
+    let user = await UserModel.findById(id);
 
     if (!user) {
       throw new Error('wrong id');

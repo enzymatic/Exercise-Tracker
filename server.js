@@ -83,7 +83,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', async (req, res) => {
-  let { limit = -1 } = req.query;
+  let { limit } = req.query;
   let { _id } = req.params;
 
   let from = req.query.from

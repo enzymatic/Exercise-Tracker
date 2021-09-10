@@ -117,67 +117,69 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', (req, res) => {
-  const userId = req.params._id;
-  let { limit } = req.query;
-  var from = req.query.from
-    ? new Date(req.query.from).getTime()
-    : new Date('1111-11-11').getTime();
-  var to = req.query.to
-    ? new Date(req.query.to).getTime()
-    : new Date().getTime();
+  const { userId: _id, from, to } = req.query;
 
-  UserModel.findById(userId, (err, data) => {
-    if (err) console.error(err);
+  // look in the database for a document matching the userId
+  UserModel.findOne(
+    {
+      _id,
+    },
+    (errFound, userFound) => {
+      if (errFound) {
+        console.log('findOne() error');
+      }
 
-    if (!data) {
-      res.send('Unknown userId');
-    } else {
-      const username = data.username;
-      console.log('*************************************');
-      console.log('USER LOG SEARCHED: ' + username);
-      console.log('from: ' + from, 'to: ' + to);
+      if (userFound) {
+        // if a user is found, return a JSON object detailing the relevant data
+        const { username, log } = userFound;
 
-      ExerciseModel.find(
-        { userId: userId } /*, {"date": {$gte: from, $lte: to}}*/
-      )
-        .select(['description', 'date', 'duration'])
-        .limit(+limit)
-        .sort({ date: -1 })
-        .exec((err, data) => {
-          if (err) console.error(err);
-          let count = 0;
-          let customData = data
-            .filter((element) => {
-              let newEle = new Date(element.date).getTime();
-              if (newEle >= from && newEle <= to) count++;
-              return newEle >= from && newEle <= to;
-            })
-            .map((element) => {
-              let newDate = new Date(element.date).toDateString();
-              return {
-                description: element.description,
-                duration: element.duration,
-                date: newDate,
-              };
-            });
-          if (!data) {
-            res.json({
-              _id: userId,
-              username: username,
-              count: 0,
-              log: [],
-            });
-          } else {
-            res.json({
-              _id: userId,
-              username: username,
-              count: count,
-              log: customData,
-            });
-          }
+        // create a copy of the log array, to be modified as to show the relevant exercises in the right order
+        let responseLog = [...log];
+
+        // if **from** and or **to** are specified in the query string
+        // filter the array considering only the exercises past and or prior to the input values
+        if (from) {
+          const dateFrom = new Date(from);
+          responseLog = responseLog.filter(
+            (exercise) => exercise.date > dateFrom
+          );
+        }
+        if (to) {
+          const dateTo = new Date(to);
+          responseLog = responseLog.filter(
+            (exercise) => exercise.date < dateTo
+          );
+        }
+
+        // update the array sorting the exercises from oldest to newest
+        responseLog = responseLog
+          .sort(
+            (firstExercise, secondExercise) =>
+              firstExercise.date > secondExercise.date
+          )
+          .map((exercise) => ({
+            // detail the fields of the output formatting the date into the desired format
+            description: exercise.description,
+            duration: exercise.duration,
+            date: exercise.date.toDateString(),
+          }));
+
+        // retrieve the length of the updated array
+        const { length: count } = responseLog;
+
+        // return a json object with the pertinent information
+        res.json({
+          _id,
+          username,
+          count,
+          log: responseLog,
         });
+      } else {
+        // findOne() returns null, detail how the userId does not match an existinfg document
+        res.send('unknown userId');
+      }
     }
-  });
+  );
 });
 // app.get('/api/users/:_id/logs', async (req, res) => {
 //   const _id = req.params._id;

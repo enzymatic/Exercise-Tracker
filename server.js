@@ -129,24 +129,62 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (!inDatabase) {
       throw new Error('wrong id');
     } else {
-      inDatabase = await ExerciseModel.findById(_id)
-        .where('date')
-        .gte(from)
-        .lte(to)
-        .limit(limit);
+      // inDatabase = await ExerciseModel.findById(_id)
+      //   .where('date')
+      //   .gte(from)
+      //   .lte(to)
+      //   .limit(limit);
 
-      res.json({
-        username: 'fcc_test',
-        count: 1,
-        _id: '5fb5853f734231456ccb3b05',
-        log: [
-          {
-            description: 'test',
-            duration: 60,
-            date: 'Mon Jan 01 1990',
-          },
-        ],
-      });
+      // res.json({
+      //   username: 'fcc_test',
+      //   count: 1,
+      //   _id: '5fb5853f734231456ccb3b05',
+      //   log: [
+      //     {
+      //       description: 'test',
+      //       duration: 60,
+      //       date: 'Mon Jan 01 1990',
+      //     },
+      //   ],
+      // });
+
+      ExerciseModel.find({ _id })
+        .select(['description', 'date', 'duration'])
+        .limit(+limit)
+        .sort({ date: -1 })
+        .exec((err, data) => {
+          if (err) console.error(err);
+          let count = 0;
+          let customData = data
+            .filter((element) => {
+              let newEle = new Date(element.date).getTime();
+              if (newEle >= from && newEle <= to) count++;
+              return newEle >= from && newEle <= to;
+            })
+            .map((element) => {
+              let newDate = new Date(element.date).toDateString();
+              return {
+                description: element.description,
+                duration: element.duration,
+                date: newDate,
+              };
+            });
+          if (!data) {
+            res.json({
+              _id: userId,
+              username: username,
+              count: 0,
+              log: [],
+            });
+          } else {
+            res.json({
+              _id: userId,
+              username: username,
+              count: count,
+              log: customData,
+            });
+          }
+        });
 
       // res.json({
       //   _id,

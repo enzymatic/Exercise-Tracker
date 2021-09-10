@@ -100,13 +100,11 @@ app.post('/api/users/:_id?/exercises', async (req, res) => {
 
       await inDatabase.save();
 
-      console.log('inDatabase');
-      console.log(inDatabase);
       res.json({
-        user,
+        _id,
+        username: user.username,
         description: inDatabase.description,
         duration: inDatabase.duration,
-        _id: inDatabase._id,
         date: inDatabase.date,
       });
     }

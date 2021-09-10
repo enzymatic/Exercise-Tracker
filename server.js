@@ -210,6 +210,8 @@ app.post('/api/users', async (req, res) => {
   const { username } = req.body;
   let inDatabase;
 
+  console.log('am in the post');
+
   try {
     inDatabase = await UserModel.findOne({ username });
     if (inDatabase) {

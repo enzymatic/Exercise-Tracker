@@ -115,58 +115,120 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:_id/logs', async (req, res) => {
-  let { limit = -1 } = req.query;
-  let { _id } = req.params;
-
-  let from = req.query.from
+app.get('/api/users/:_id/logs', (req, res) => {
+  const userId = req.params._id,
+    { limit } = req.query;
+  var from = req.query.from
     ? new Date(req.query.from).getTime()
-    : new Date('1-1-1').getTime();
-  let to = req.query.to
+    : new Date('1111-11-11').getTime();
+  var to = req.query.to
     ? new Date(req.query.to).getTime()
     : new Date().getTime();
 
-  try {
-    let user = await UserModel.findById(_id);
+  UserModel.findById(userId, (err, data) => {
+    if (err) console.error(err);
 
-    if (!user) {
-      throw new Error('wrong id, try again');
+    if (!data) {
+      res.send('Unknown userId');
     } else {
-      let exercises = await ExerciseModel.find({ _id })
-        .where('date')
-        .gte(from)
-        .lte(to)
-        .limit(limit);
+      const username = data.username;
+      console.log('*************************************');
+      console.log('USER LOG SEARCHED: ' + username);
+      console.log('from: ' + from, 'to: ' + to);
 
-      if (!exercises) {
-        res.json({
-          username: user.username,
-          count: 0,
-          _id: user._id,
-          log: [],
-        });
-      } else {
-        res.json({
-          username: user.username,
-          count: exercises.length,
-          _id: user._id,
-          log: [
-            ...exercises.map(({ description, duration, date: oldDate }) => {
-              let date = new Date(oldDate).toDateString();
+      ExerciseModel.find({ userId: userId } /*, {"date": {$gte: from, $lte: to}}*/)
+        .select(['description', 'date', 'duration'])
+        .limit(+limit)
+        .sort({ date: -1 })
+        .exec((err, data) => {
+          if (err) console.error(err);
+          let count = 0;
+          let customData = data
+            .filter((element) => {
+              let newEle = new Date(element.date).getTime();
+              if (newEle >= from && newEle <= to) count++;
+              return newEle >= from && newEle <= to;
+            })
+            .map((element) => {
+              let newDate = new Date(element.date).toDateString();
               return {
-                description,
-                duration,
-                date,
+                description: element.description,
+                duration: element.duration,
+                date: newDate,
               };
-            }),
-          ],
+            });
+          if (!data) {
+            res.json({
+              _id: userId,
+              username: username,
+              count: 0,
+              log: [],
+            });
+          } else {
+            res.json({
+              _id: userId,
+              username: username,
+              count: count,
+              log: customData,
+            });
+          }
         });
-      }
     }
-  } catch (error) {
-    res.json({ error: 'something went wrong' });
-  }
+  });
 });
+
+// app.get('/api/users/:_id/logs', async (req, res) => {
+//   let { limit = -1 } = req.query;
+//   let { _id } = req.params;
+
+//   let from = req.query.from
+//     ? new Date(req.query.from).getTime()
+//     : new Date('1-1-1').getTime();
+//   let to = req.query.to
+//     ? new Date(req.query.to).getTime()
+//     : new Date().getTime();
+
+//   try {
+//     let user = await UserModel.findById(_id);
+
+//     if (!user) {
+//       throw new Error('wrong id, try again');
+//     } else {
+//       let exercises = await ExerciseModel.find({ _id })
+//         .where('date')
+//         .gte(from)
+//         .lte(to)
+//         .limit(limit);
+
+//       if (!exercises) {
+//         res.json({
+//           username: user.username,
+//           count: 0,
+//           _id: user._id,
+//           log: [],
+//         });
+//       } else {
+//         res.json({
+//           username: user.username,
+//           count: exercises.length,
+//           _id: user._id,
+//           log: [
+//             ...exercises.map(({ description, duration, date: oldDate }) => {
+//               let date = new Date(oldDate).toDateString();
+//               return {
+//                 description,
+//                 duration,
+//                 date,
+//               };
+//             }),
+//           ],
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     res.json({ error: 'something went wrong' });
+//   }
+// });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port);

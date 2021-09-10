@@ -115,7 +115,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }
 });
 
-app.get('/api/users/:_id/logs', async (req, res) => {
+app.get('/api/exercise/log', async (req, res) => {
   const { _id, from, to, limit } = req.query;
 
   let user = await UserModel.findById(_id);

@@ -12,18 +12,20 @@ app.use(express.static('public'));
 
 mongoose.connect(process.env.DB_URI, { useNewUrlParser: true });
 
-let someSchema = new mongoose.Schema({
-  date: Date,
-  duration: { type: Number, required: true },
-  description: { type: String, required: true },
-});
-
 ///////////////models///////////////
 const UserSchema = new mongoose.Schema({
-  username: {
-    type: String,
-  },
-  log: [someSchema],
+  // username: {
+  //   type: String,
+  // },
+  username: { type: String, required: true },
+  count: { type: Number, default: 0 },
+  log: [
+    {
+      description: { type: String },
+      duration: { type: Number },
+      date: { type: Date },
+    },
+  ],
 });
 
 const UserModel = mongoose.model('User', UserSchema);
@@ -121,12 +123,11 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     res.json({ error: error.message });
   }
 });
-app.get('/api/users/:_id/logs', (req, res) => {
-  let id = req.params._id;
 
-  UserModel.findById(id, (error, data) => {
+app.get('/api/users/:_id/logs', (req, res) => {
+  UserModel.findById(req.params._id, (error, result) => {
     if (!error) {
-      let resObj = {};
+      let resObj = result;
 
       if (req.query.from || req.query.to) {
         let fromDate = new Date(0);
@@ -135,30 +136,27 @@ app.get('/api/users/:_id/logs', (req, res) => {
         if (req.query.from) {
           fromDate = new Date(req.query.from);
         }
+
         if (req.query.to) {
           toDate = new Date(req.query.to);
         }
 
-        data.log = data.log.filter((exerciseItem) => {
-          exerciseItemDate = new Date(exerciseItem.date);
+        fromDate = fromDate.getTime();
+        toDate = toDate.getTime();
 
-          return (
-            exerciseItemDate.getTime() >= fromDate.getTime() &&
-            exerciseItemDate.getTime() <= toDate.getTime()
-          );
+        resObj.log = resObj.log.filter((session) => {
+          let sessionDate = new Date(session.date).getTime();
+
+          return sessionDate >= fromDate && sessionDate <= toDate;
         });
       }
 
-      // This is the first one which stopped
       if (req.query.limit) {
-        data.log = data.log.slice(0, req.query.limit);
-        console.log(data.log);
+        resObj.log = resObj.log.slice(0, req.query.limit);
       }
-      resObj['_id'] = data.id;
-      resObj['username'] = data.username;
-      resObj['count'] = data.log.length;
-      resObj['log'] = data.log;
 
+      resObj = resObj.toJSON();
+      resObj['count'] = result.log.length;
       res.json(resObj);
     }
   });

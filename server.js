@@ -127,7 +127,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     console.log(inDatabase);
 
     if (!inDatabase) {
-      throw new Error('wrong id');
+      throw new Error('wrong id, try again');
     } else {
       // inDatabase = await ExerciseModel.findById(_id)
       //   .where('date')

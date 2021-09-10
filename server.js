@@ -107,7 +107,6 @@ app.post('/api/users/:_id?/exercises', async (req, res) => {
         description: inDatabase.description,
         duration: inDatabase.duration,
         date: new Date().toDateString(),
-        // date: moment().format('ddd MMM DD YYYY'),
       });
     }
   } catch (error) {

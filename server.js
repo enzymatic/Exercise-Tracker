@@ -117,8 +117,8 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 });
 
 app.get('/api/users/:_id/logs', (req, res) => {
-  const userId = req.params._id,
-    { limit } = req.query;
+  const userId = req.params._id;
+  let { limit } = req.query;
   var from = req.query.from
     ? new Date(req.query.from).getTime()
     : new Date('1111-11-11').getTime();
